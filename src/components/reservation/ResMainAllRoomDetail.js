@@ -60,11 +60,7 @@ function ResMainAllRoomDetail(props) {
   console.log("포멧체크인 : ", formattedCheckInDate)
   console.log("포멧체크아웃 : ", formattedCheckOutDate)
 
-  const [options, setOptions] = useState({
-    adultBf: 0, // 성인 조식 수
-    childBf: 0, // 어린이 조식 수
-    extraBed: 0, // 엑스트라 베드 수
-  })
+
   const [paySum, setPaySum] = useState(dayPrice || 0); // 기본 요금 설정
   const [modalMessage, setModalMessage] = useState("") // 모달 메시지
   const [showModal, setShowModal] = useState(false) // 모달 표시 여부
@@ -72,40 +68,34 @@ function ResMainAllRoomDetail(props) {
   const [personalInfoAgree, setPersonalInfoAgree] = useState("") // 개인정부 동의 상태
   const [thirdPartyAgree, setThirdPartyAgree] = useState(""); // 제ㄱ자 제공 동의 상태
 
-  
+  // 일수 계산 함수
+const calculateDaysDifference = (startDate, endDate) => {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const differenceInTime = end - start;
+  const differenceInDays = differenceInTime / (1000 * 60 * 60 * 24); // 밀리초를 일수로 변환
+  return differenceInDays; // 체크인과 체크아웃 사이의 일수
+};
 
-  const updateOption = (type, value) => {
-    setOptions((prev) => ({
-      ...prev,
-      [type]: Math.max(prev[type] + value, 0) // 0 미만 방지
-    }))
+// 요금 합계 계산 함수
+const calculateTotalPrice = () => {
+  const days = calculateDaysDifference(checkInDate, checkOutDate);
+  return dayPrice * days; // 일수에 따라 총 요금 계산
+};
+
+// 초기 총 결제 금액 설정
+useEffect(() => {
+  if (checkInDate && checkOutDate && dayPrice) {
+    const totalPrice = calculateTotalPrice();
+    setPaySum(totalPrice); // 총 결제 금액 업데이트
   }
-
-  // options 샅애가 벼경될 때 요금을 다시 계산
-  useEffect(() => {
-    window.scrollTo(0, 0);
-    const total =
-      dayPrice +
-      options.adultBf * 60000 +
-      options.childBf * 38000 +
-      options.extraBed * 66000;
-    setPaySum(total)
-  }, [options, dayPrice])
+}, [checkInDate, checkOutDate, dayPrice]);
 
 
-  // 합계 구하는 함수
-  const priceSum = () => {
-    const total =
-      468000 +
-      options.adultBf * 60000 + options.childBf * 38000 + options.extraBed * 66000
-    setPaySum(total)
-  }
 
   const handlePayment = () => {
     // 유의사항 체크 여부 확인
     if (!guideChecked) {
-      // setModalMessage("유의사항, 취소 및 환불 규정을 모두 체크를 해주셔야 결제 가능합니다");
-      // setShowModal(true);
       alert("유의사항, 취소 및 환불 규정을 모두 체크를 해주셔야 결제 가능합니다")
       console.log("유의사항 에러")
       return;
@@ -113,8 +103,6 @@ function ResMainAllRoomDetail(props) {
 
     // 개인정보 수집 동의 여부 확인
     if (personalInfoAgree !== "agree") {
-      // setModalMessage("개인정보 수집ㆍ이용 동의해야지만 결제 가능합니다.");
-      // setShowModal(true);
       alert("개인정보 수집ㆍ이용 동의해야지만 결제 가능합니다")
       console.log("개인정보 수집 에러")
       return;
@@ -122,28 +110,19 @@ function ResMainAllRoomDetail(props) {
 
     // 제3자 제공 동의 여부 확인
     if (thirdPartyAgree !== "agree") {
-      // setModalMessage("개인정보 제3자 제공에 대한 동의해야 결제가 가능합니다.");
-      // setShowModal(true);
       alert("개인정보 제3자 제공에 대한 동의해야 결제가 가능합니다")
       console.log("제3자 에러")
       return;
     }
 
-  //      // 결제하기 페이지
-  //      setModalMessage("결제가 완료되었습니다. 이용해 주셔서 감사합니다!");
-  //   setShowModal(true);
-  // }
+
 
   // PaymentPage로 이동
   navigate("/reserve/detail/paymentallroom", {
     state: {
       checkInDate : formattedCheckInDate,
       checkOutDate : formattedCheckOutDate,
-      // reservationDate: `${formattedCheckInDate} ~ ${formattedCheckOutDate}`, // 예약 날짜
       roomType: roomType,  // offerName 객실
-      // adultBf: options.adultBf,
-      // childBf: options.childBf,
-      // extraBed: options.extraBed,
       roomId: roomId,
       productId: productId,
       paySum: paySum,
@@ -206,7 +185,7 @@ function ResMainAllRoomDetail(props) {
                 <li className="list">
                   <h4>객실 요금</h4>
                   <div className="box price">
-                    <span className="rsv-price">{dayPrice.toLocaleString()}</span>
+                    <span className="rsv-price">{paySum.toLocaleString()}</span>
                     <span>원</span>
                   </div>
                 </li>
