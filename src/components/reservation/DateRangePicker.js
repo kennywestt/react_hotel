@@ -1,4 +1,4 @@
-import { format } from "date-fns";
+import { format, addDays } from "date-fns"; // addDays 추가
 import ko from "date-fns/locale/ko"; // locale 한글버전
 import React, { useState } from "react";
 import { DateRange } from "react-date-range";
@@ -10,17 +10,24 @@ const DateRangePicker = ({ onDateChange, showPicker, togglePicker }) => {
   const [range, setRange] = useState([
     {
       startDate: new Date(),
-      endDate: new Date(),
+      endDate: addDays(new Date(), 1), // 종료일 기본값을 시작일 다음 날로 설정
       key: "selection",
     },
   ]);
 
   const handleSelect = (ranges) => {
-    setRange([ranges.selection]);
     const { startDate, endDate } = ranges.selection;
+
+    // 시작일과 종료일이 같을 수 없도록 설정
+    if (startDate.getTime() === endDate.getTime()) {
+      alert("시작일과 종료일은 같을 수 없습니다.");
+      return;
+    }
+
+    setRange([ranges.selection]);
     onDateChange({ startDate, endDate });
-    console.log("데이트피커 시작일",startDate)
-    console.log("데이트피커 종료일",endDate)
+    console.log("데이트피커 시작일", startDate);
+    console.log("데이트피커 종료일", endDate);
   };
 
   const formatDate = (date) => format(date, "yyyy-MM-dd");
@@ -29,7 +36,7 @@ const DateRangePicker = ({ onDateChange, showPicker, togglePicker }) => {
     setRange([
       {
         startDate: new Date(),
-        endDate: new Date(),
+        endDate: addDays(new Date(), 1), // 기본값으로 초기화
         key: "selection",
       },
     ]);
@@ -39,7 +46,6 @@ const DateRangePicker = ({ onDateChange, showPicker, togglePicker }) => {
   const handleConfirm = () => {
     togglePicker();
   };
-
 
   return (
     <div>
@@ -84,6 +90,5 @@ const DateRangePicker = ({ onDateChange, showPicker, togglePicker }) => {
     </div>
   );
 };
-
 
 export default DateRangePicker;
