@@ -12,6 +12,7 @@ const bkURL = process.env.REACT_APP_BACK_URL;
 
 function Res_search() {
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false); // 로딩 상태
 
   // 상태 관리
   const [checkInDate, setCheckInDate] = useState(null); // 체크인 날짜
@@ -19,7 +20,7 @@ function Res_search() {
   const [availablePackages, setAvailablePackages] = useState([]); // 예약 가능한 패키지 목록
   const [availableRooms, setAvailableRooms] = useState([]); // 예약 가능한 객실 목록
   const [showPicker, setShowPicker] = useState(false); // 날짜 선택기 표시 여부
-  const [tab, setTab] = useState("package"); // 'package' or 'room' 탭 선택 상태
+  const [tab, setTab] = useState("room"); // 'package' or 'room' 탭 선택 상태
   const [popupAdultCount, setPopupAdultCount] = useState(1); // 팝업에서 사용하는 성인 수
   const [popupChildrenCount, setPopupChildrenCount] = useState(0); // 팝업에서 사용하는 어린이 수
   const [confirmedAdultCount, setConfirmedAdultCount] = useState(1); // 확인버튼을 누를 때의 성인 수
@@ -120,12 +121,8 @@ function Res_search() {
 
   // Axios 요청에서 오류 처리
   const handleSearch = async () => {
-    // 날짜가 선택되지 않았으면 alert
-    if (!checkInDate || !checkOutDate) {
-      alert("날짜를 선택해주세요");
-      return;
-    }
-
+    
+    setIsLoading(true); // 로딩 상태 시작
     setIsSearchClicked(true); // 검색 버튼 클릭 여부 설정
     
     // 날짜에 하루를 더하는 함수
@@ -166,6 +163,8 @@ function Res_search() {
         // 기타 오류
         console.error("오류 발생:", error.message);
       }
+    } finally {
+      setIsLoading(false); // 로딩 종료
     }
   };
 
@@ -175,6 +174,9 @@ function Res_search() {
 
   return (
     <div className="container reservation">
+      {isLoading ? (
+              <div className="loading-spinner"></div>
+            ) : (
       <section className="reservation">
         <div className="center">
           <h2>날짜, 인원 선택</h2>
@@ -197,13 +199,17 @@ function Res_search() {
                 <span className="num">{confirmedChildrenCount}</span>
               </div>
             </div>
-            <button
-              type="button"
-              className="reservation-search-btn"
-              onClick={handleSearch}
-            >
-              검색
-            </button>
+            {isLoading ? (
+              <div className="loading-spinner"></div>
+            ) : (
+              <button
+                type="button"
+                className="reservation-search-btn"
+                onClick={handleSearch}
+              >
+                검색
+              </button>
+            )}
             <div className={`reservation-popup ${isPopupVisible ? "on" : ""}`}>
               <form action="">
                 <ul className="popup-left">
@@ -273,6 +279,18 @@ function Res_search() {
               <div>
             <div className="tab-wrap">
               <ul className="tab">
+              <li
+                  className={tab === "room" ? "on" : ""}
+                  onClick={() => setTab("room")}
+                >
+                  객실 (
+                  <em className="num">
+                    {availableRooms.length > 0
+                      ? `${availableRooms.length}`
+                      : "0"}
+                  </em>
+                  )
+                </li>
                 <li
                   className={tab === "package" ? "on" : ""}
                   onClick={() => setTab("package")}
@@ -281,18 +299,6 @@ function Res_search() {
                   <em className="num">
                     {availablePackages.length > 0
                       ? `${availablePackages.length}`
-                      : "0"}
-                  </em>
-                  )
-                </li>
-                <li
-                  className={tab === "room" ? "on" : ""}
-                  onClick={() => setTab("room")}
-                >
-                  객실 (
-                  <em className="num">
-                    {availableRooms.length > 0
-                      ? `${availableRooms.length}`
                       : "0"}
                   </em>
                   )
@@ -367,7 +373,7 @@ function Res_search() {
             )}
           </div>
         </div>
-      </section>
+      </section>)}
     </div>
   );
 }
