@@ -125,14 +125,6 @@ function Res_search() {
     setIsLoading(true); // 로딩 상태 시작
     setIsSearchClicked(true); // 검색 버튼 클릭 여부 설정
     
-    // 날짜에 하루를 더하는 함수
-    const addOneDay = (date) => {
-      const newDate = new Date(date); // 새로운 날짜 객체 생성
-      newDate.setDate(newDate.getDate() + 1); // 하루 더하기
-      return newDate;
-    };
-    // const startDate = addOneDay(checkInDate).toISOString().split("T")[0];
-    // const endDate = addOneDay(checkOutDate).toISOString().split("T")[0];
     const startDate = checkInDate
     const endDate = checkOutDate
 
@@ -174,9 +166,6 @@ function Res_search() {
 
   return (
     <div className="container reservation">
-      {isLoading ? (
-              <div className="loading-spinner"></div>
-            ) : (
       <section className="reservation">
         <div className="center">
           <h2>날짜, 인원 선택</h2>
@@ -199,9 +188,6 @@ function Res_search() {
                 <span className="num">{confirmedChildrenCount}</span>
               </div>
             </div>
-            {isLoading ? (
-              <div className="loading-spinner"></div>
-            ) : (
               <button
                 type="button"
                 className="reservation-search-btn"
@@ -209,7 +195,6 @@ function Res_search() {
               >
                 검색
               </button>
-            )}
             <div className={`reservation-popup ${isPopupVisible ? "on" : ""}`}>
               <form action="">
                 <ul className="popup-left">
@@ -274,6 +259,10 @@ function Res_search() {
           <div className={`no-select ${isSearchClicked ? "" : "on"}`}>
             예약을 원하시는 날짜, 인원을 선택해주세요.
           </div>
+          <div className="loading-overlay">
+              {isLoading ? (
+                <div className="loading-spinner"></div>
+              ) : (
           <div className={`search-results-wrap ${isSearchClicked ? "on" : ""}`}>
             {isSearchClicked && (
               <div>
@@ -304,7 +293,6 @@ function Res_search() {
                   )
                 </li>
               </ul>
-
               <div className="keyword-sorting">
                 <div className="sorting-wrap">
                   <div
@@ -371,9 +359,11 @@ function Res_search() {
             </div>
             </div>
             )}
-          </div>
+          </div> // 검색결과영역
+              )}
         </div>
-      </section>)}
+        </div>
+      </section>
     </div>
   );
 }
