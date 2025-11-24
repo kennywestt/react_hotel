@@ -1,164 +1,72 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import DateRangePicker from "./DateRangePicker";
 import PackageRoomItem from "./PackageRoomItem"; // 패키지 컴포넌트
 import OneRoomItem from "./OneRoomItem"; // 객실 컴포넌트
-// import "../../scss/res_search.scss";
 import "../../scss/common.scss";
 import "../../scss/reservation.scss";
-
-const bkURL = process.env.REACT_APP_BACK_URL;
+import useReservationStore from "../../store/reservationStore";
 
 function Res_search() {
-  const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(false); // 로딩 상태
-
-  // 상태 관리
-  const [checkInDate, setCheckInDate] = useState(null); // 체크인 날짜
-  const [checkOutDate, setCheckOutDate] = useState(null); // 체크아웃 날짜
-  const [availablePackages, setAvailablePackages] = useState([]); // 예약 가능한 패키지 목록
-  const [availableRooms, setAvailableRooms] = useState([]); // 예약 가능한 객실 목록
-  const [showPicker, setShowPicker] = useState(false); // 날짜 선택기 표시 여부
-  const [tab, setTab] = useState("room"); // 'package' or 'room' 탭 선택 상태
-  const [popupAdultCount, setPopupAdultCount] = useState(1); // 팝업에서 사용하는 성인 수
-  const [popupChildrenCount, setPopupChildrenCount] = useState(0); // 팝업에서 사용하는 어린이 수
-  const [confirmedAdultCount, setConfirmedAdultCount] = useState(1); // 확인버튼을 누를 때의 성인 수
-  const [confirmedChildrenCount, setConfirmedChildrenCount] = useState(0); // 확인버튼을 누를 때의 어린이 수
-  const [isPopupVisible, setIsPopupVisible] = useState(false);
-  const [sortingOrder, setSortingOrder] = useState(""); // 정렬 상태 (낮은 가격 순 / 높은 가격 순)
-  const [isSortingOpen, setIsSortingOpen] = useState(false); // 정렬 옵션 드롭다운 열기/닫기
-  const [isSearchClicked, setIsSearchClicked] = useState(false); // 검색 버튼 클릭 여부
-
-  const togglePicker = () => setShowPicker(!showPicker);
-  // 팝업 상태 토글
-  const togglePopup = () => {
-    setIsPopupVisible(!isPopupVisible);
-    console.log("Popup Visible:", !isPopupVisible);
-
-    // 팝업이 열릴 때 현재 확인된 값을 팝업 초기 값으로 설정
-    if (!isPopupVisible) {
-      setPopupAdultCount(confirmedAdultCount);
-      setPopupChildrenCount(confirmedChildrenCount);
-    }
-  };
-
-  // 날짜 변경 핸들러
-  const handleDateChange = ({ startDate, endDate }) => {
-    setCheckInDate(startDate);
-    setCheckOutDate(endDate);
-  };
-  // 확인 버튼 핸들러
-  const handleConfirm = () => {
-    setConfirmedAdultCount(popupAdultCount);
-    setConfirmedChildrenCount(popupChildrenCount);
-    setIsPopupVisible(false); // 팝업 닫기
-  };
-
-  const incrementCount = (type) => {
-    if (type === "adult" && popupAdultCount < 2) {
-      setPopupAdultCount((prev) => prev + 1);
-    }
-    if (type === "children" && popupChildrenCount < 3) {
-      setPopupChildrenCount((prev) => prev + 1);
-    }
-  };
-
-  const decrementCount = (type) => {
-    if (type === "adult" && popupAdultCount > 1) {
-      setPopupAdultCount((prev) => prev - 1);
-    }
-    if (type === "children" && popupChildrenCount > 0) {
-      setPopupChildrenCount((prev) => prev - 1);
-    }
-  };
+  // const navigate = useNavigate();
+  const {
+    isLoading,
+    checkInDate,
+    checkOutDate,
+    availablePackages,
+    availableRooms,
+    showPicker,
+    tab,
+    popupAdultCount,
+    popupChildrenCount,
+    confirmedAdultCount,
+    confirmedChildrenCount,
+    isPopupVisible,
+    sortingOrder,
+    isSortingOpen,
+    isSearchClicked,
+    setDate,
+    togglePicker,
+    setTab,
+    togglePopup,
+    closePopup,
+    handleConfirm,
+    incrementCount,
+    decrementCount,
+    handleSortChange,
+    toggleSortingDropdown,
+    handleSearch,
+  } = useReservationStore();
 
   // 가격 정렬 함수
-  const sortPackages = (packages) => {
-    return packages.sort((a, b) => {
-      if (sortingOrder === "lowToHigh") {
-        return a.offer_price - b.offer_price;
-      } else if (sortingOrder === "highToLow") {
-        return b.offer_price - a.offer_price;
-      } else {
-        return 0; // 기본 정렬 없음
-      }
-    });
-  };
+  const sortedAvailablePackages = useMemo(() => {
+    const sorted = [...availablePackages];
+    if (sortingOrder === "lowToHigh") {
+      return sorted.sort((a, b) => a.offer_price - b.offer_price);
+    }
+    if (sortingOrder === "highToLow") {
+      return sorted.sort((a, b) => b.offer_price - a.offer_price);
+    }
+    return sorted;
+  }, [availablePackages, sortingOrder]);
 
-  const sortRooms = (rooms) => {
-    return rooms.sort((a, b) => {
-      if (sortingOrder === "lowToHigh") {
-        return a.day_price - b.day_price;
-      } else if (sortingOrder === "highToLow") {
-        return b.day_price - a.day_price;
-      } else {
-        return 0; // 기본 정렬 없음
-      }
-    });
-  };
-
-  // 정렬 기준 변경 함수
-  const handleSortChange = (order) => {
-    setSortingOrder(order);
-    setIsSortingOpen(false); // 드롭다운을 닫음
-  };
+  const sortedAvailableRooms = useMemo(() => {
+    const sorted = [...availableRooms];
+    if (sortingOrder === "lowToHigh") {
+      return sorted.sort((a, b) => a.day_price - b.day_price);
+    }
+    if (sortingOrder === "highToLow") {
+      return sorted.sort((a, b) => b.day_price - a.day_price);
+    }
+    return sorted;
+  }, [availableRooms, sortingOrder]);
 
   useEffect(() => {
     if (tab === "package") {
-      const sortedPackages = sortPackages([...availablePackages]);
-      setAvailablePackages(sortedPackages);
+      // 정렬된 패키지 사용
     } else if (tab === "room") {
-      const sortedRooms = sortRooms([...availableRooms]);
-      setAvailableRooms(sortedRooms);
+      // 정렬된 룸 사용
     }
   }, [sortingOrder, tab]);
-
-  // 드롭다운 토글 함수
-  const toggleSortingDropdown = () => {
-    setIsSortingOpen(!isSortingOpen); // 드롭다운 열기/닫기
-  };
-
-  // Axios 요청에서 오류 처리
-  const handleSearch = async () => {
-    
-    setIsLoading(true); // 로딩 상태 시작
-    setIsSearchClicked(true); // 검색 버튼 클릭 여부 설정
-    
-    const startDate = checkInDate
-    const endDate = checkOutDate
-
-    console.log("시작일:", startDate);
-    console.log("종료일:", endDate);
-
-    try {
-      const response = await axios.post(bkURL + "/reserve", {
-        startDate,
-        endDate,
-      });
-
-      if (response.status === 200) {
-        const { availableRooms, availablePackages } = response.data;
-        setAvailableRooms(availableRooms); // 객실 목록 업데이트
-        setAvailablePackages(availablePackages); // 패키지 목록 업데이트
-      }
-    } catch (error) {
-      console.error("예약 가능한 객실 조회 실패:", error.message); // 오류 메시지 출력
-      if (error.response) {
-        // 서버 응답이 있을 때
-        console.error("서버 응답 오류:", error.response.data);
-        console.error("서버 응답 상태:", error.response.status);
-      } else if (error.request) {
-        // 요청이 보내졌지만 응답이 없을 때
-        console.error("응답 없음:", error.request);
-      } else {
-        // 기타 오류
-        console.error("오류 발생:", error.message);
-      }
-    } finally {
-      setIsLoading(false); // 로딩 종료
-    }
-  };
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -173,7 +81,7 @@ function Res_search() {
             <div className="date-wrap">
               <span className="tit">CHECK IN / OUT</span>
               <DateRangePicker
-                onDateChange={handleDateChange}
+                onDateChange={setDate}
                 showPicker={showPicker}
                 togglePicker={togglePicker}
               />
@@ -249,9 +157,7 @@ function Res_search() {
               </form>
 
               <button
-                className="close-btn"
-                onClick={() => setIsPopupVisible(false)}
-              >
+                className="close-btn" onClick={closePopup}>
                 <span className="blind">닫기</span>
               </button>
             </div>
@@ -273,16 +179,14 @@ function Res_search() {
                   onClick={() => setTab("room")}
                 >
                   객실 (
-                  <em className="num">
-                    {availableRooms.length > 0
-                      ? `${availableRooms.length}`
-                      : "0"}
-                  </em>
+                  <em className="num">{sortedAvailableRooms.length}</em>
                   )
                 </li>
                 <li
                   className={tab === "package" ? "on" : ""}
-                  onClick={() => setTab("package")}
+                  onClick={() => {
+                    setTab("package");
+                  }}
                 >
                   패키지 (
                   <em className="num">
@@ -309,17 +213,13 @@ function Res_search() {
                     <ul className="select-sort">
                       <li
                         className={sortingOrder === "lowToHigh" ? "on" : ""}
-                        onClick={() =>
-                          handleSortChange("lowToHigh", "낮은 가격 순")
-                        }
+                        onClick={() => handleSortChange("lowToHigh")}
                       >
                         낮은 가격 순
                       </li>
                       <li
                         className={sortingOrder === "highToLow" ? "on" : ""}
-                        onClick={() =>
-                          handleSortChange("highToLow", "높은 가격 순")
-                        }
+                        onClick={() => handleSortChange("highToLow")}
                       >
                         높은 가격 순
                       </li>
@@ -333,7 +233,7 @@ function Res_search() {
             <div className="tab-cont-wrap">
               {tab === "package" ? (
                 <div className="tab-cont package on">
-                  {availablePackages.map((pkg,index) => (
+                  {sortedAvailablePackages.map((pkg, index) => (
                     <PackageRoomItem
                       key={pkg.offer_id}
                       packageData={pkg}
@@ -348,7 +248,7 @@ function Res_search() {
               ) : (
                 <div className="tab-cont room on">
                   <OneRoomItem
-                    rooms={availableRooms}
+                    rooms={sortedAvailableRooms}
                     checkInDate={checkInDate}
                     checkOutDate={checkOutDate}
                     adultCount={confirmedAdultCount}
