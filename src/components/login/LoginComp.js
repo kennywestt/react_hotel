@@ -150,8 +150,6 @@ const LoginComp = () => {
                             </div>
                             <button type="button" className="btn-login" onClick={loginGo}>로그인</button>
 
-                            <NaverLogin/>
-                            
                             <div className="link-wrap">
                                 <Link to="/join">회원가입</Link>
                                 <Link to="/findid">ID/PW찾기</Link>
