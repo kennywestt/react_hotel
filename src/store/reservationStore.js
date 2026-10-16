@@ -3,11 +3,16 @@ import axios from "axios";
 
 const bkURL = process.env.REACT_APP_BACK_URL;
 
+// DateRangePicker 기본값과 동기화 (오늘 ~ 내일, 1박 2일)
+const initialCheckIn = new Date();
+const initialCheckOut = new Date();
+initialCheckOut.setDate(initialCheckOut.getDate() + 1);
+
 const useReservationStore = create((set, get) => ({
   // state
   isLoading: false,
-  checkInDate: null,
-  checkOutDate: null,
+  checkInDate: initialCheckIn,
+  checkOutDate: initialCheckOut,
   availablePackages: [],
   availableRooms: [],
   showPicker: false,
